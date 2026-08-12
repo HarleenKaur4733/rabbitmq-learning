@@ -10,5 +10,8 @@ public class MessageConsumer {
     public void receiveMessage(String message) {
 
         System.out.println("Received: " + message);
+
+        throw new RuntimeException("Something went wrong!");
     }
+
 }

@@ -1,35 +1,35 @@
 package com.rabbitmq_consumer.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
+import org.aopalliance.aop.Advice;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+
     @Bean
-    public DirectExchange deadLetterExchange() {
-        return new DirectExchange("hello.dlx");
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory) {
+
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+
+        factory.setConnectionFactory(connectionFactory);
+
+        factory.setAdviceChain(
+                retryInterceptor());
+
+        return factory;
     }
 
     @Bean
-    public Queue queue() {
-        return QueueBuilder
-                .durable("hello.queue")
-                .deadLetterExchange("hello.dlx")
-                .deadLetterRoutingKey("dead")
+    public Advice retryInterceptor() {
+        return RetryInterceptorBuilder.stateless()
+                .maxRetries(2)
+                .recoverer(new RejectAndDontRequeueRecoverer())
                 .build();
     }
-
-    @Bean
-    public Binding binding(Queue queue, DirectExchange exchange) {
-        return BindingBuilder
-                .bind(queue)
-                .to(exchange)
-                .with("hello");
-    }
-
 }
