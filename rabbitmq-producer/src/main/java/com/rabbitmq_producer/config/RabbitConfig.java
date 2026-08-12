@@ -7,6 +7,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -65,5 +66,23 @@ public class RabbitConfig {
                 .bind(deadLetterQueue)
                 .to(deadLetterExchange)
                 .with("dead");
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+
+        template.setConfirmCallback((correlationData, ack, cause) -> {
+
+            if (ack) {
+                System.out.println("Publisher ACK: Message accepted by RabbitMQ");
+            } else {
+                System.out.println("Publisher NACK: " + cause);
+            }
+
+        });
+
+        return template;
     }
 }
